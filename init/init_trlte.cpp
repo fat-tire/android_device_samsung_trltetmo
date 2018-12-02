@@ -1,5 +1,6 @@
 /*
-   Copyright (c) 2013, The Linux Foundation. All rights reserved.
+   Copyright (c) 2016, The Linux Foundation. All rights reserved.
+   Copyright (c) 2017-2018, The LineageOS Project. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -28,16 +29,19 @@
  */
 
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include <sys/_system_properties.h>
 
-#include <cutils/properties.h>
+#include <android-base/logging.h>
+#include <android-base/properties.h>
+
+#include "property_service.h"
 #include "vendor_init.h"
-#include "log.h"
-#include "util.h"
-#include <sys/system_properties.h>
 
-#define ISMATCH(a,b)    (!strncmp(a,b,PROP_VALUE_MAX))
+#include "init_apq8084.h"
+
+using android::base::GetProperty;
+using android::init::property_set;
 
 void gsm_properties()
 {
@@ -45,43 +49,32 @@ void gsm_properties()
     property_set("ro.telephony.default_network", "9");
 }
 
-void init_variant_properties() {
-
-    char platform[PROP_VALUE_MAX];
-    char bootloader[PROP_VALUE_MAX];
-    char device[PROP_VALUE_MAX];
-    char devicename[PROP_VALUE_MAX];
-    int rc;
-
-    rc = property_get("ro.board.platform",platform, NULL);
-    if (!rc || !ISMATCH(platform, ANDROID_TARGET))
+void init_target_properties()
+{
+    std::string platform = GetProperty("ro.board.platform", "");
+    if (platform != ANDROID_TARGET)
         return;
 
-    property_get("ro.bootloader", bootloader, NULL);
+    std::string bootloader = GetProperty("ro.bootloader", "");
 
-    if (strstr(bootloader,"N910W8")) {
-        /* trltecan These values are taken from TMO and edited for the 910W8 FIXME */
-        property_set("ro.build.fingerprint", "samsung/trltevl/trltecan:6.0.1/MRA58K/N910TUVU2EPE3:user/release-keys");
-        property_set("ro.build.description", "trltevl-user 6.0.1 MRA58K N910TUVU2EPE3 release-keys");
-        property_set("ro.product.model", "SM-N910W8");
-        property_set("ro.product.device", "trltecan");
+    if (bootloader.find("N910T") == 0) {
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/trltetmo/trltetmo:6.0.1/MMB29M/N910TUVU2EQI2:user/release-keys");
+        property_override("ro.build.description", "trltetmo-user 6.0.1 MMB29M N910TUVU2EQI2 release-keys");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-N910T");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "trltetmo");
+        property_override_dual("ro.product.name", "ro.vendor.product.name", "trltetmo");
+        gsm_properties();
+    } else if (bootloader.find("N910W8") == 0) {
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/trltecan/trltecan:6.0.1/MMB29M/N910W8VLS1DQH2:user/release-keys");
+        property_override("ro.build.description", "trltecan-user 6.0.1 MMB29M N910W8VLS1DQH2 release-keys");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-N910W8");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "trltecan");
+        property_override_dual("ro.product.name", "ro.vendor.product.name", "trltecan");
         gsm_properties();
     } else {
-        /* trltetmo */
-        property_set("ro.build.fingerprint", "samsung/trltetmo/trltetmo:6.0.1/MRA58K/N910TUVU2EPE3:user/release-keys");
-        property_set("ro.build.description", "trltetmo-user 6.0.1 MRA58K N910TUVU2EPE3 release-keys");
-        property_set("ro.product.model", "SM-N910T");
-        property_set("ro.product.device", "trltetmo");
         gsm_properties();
     }
 
-
-    property_get("ro.product.device", device, NULL);
-    strlcpy(devicename, device, sizeof(devicename));
-    INFO("Found bootloader id %s setting build properties for %s device\n", bootloader, devicename);
-}
-
-
-void vendor_load_properties() {
-    init_variant_properties();
+    std::string device = GetProperty("ro.product.device", "");
+    LOG(ERROR) << "Found bootloader id " << bootloader << " setting build properties for " << device << " device" << std::endl;
 }

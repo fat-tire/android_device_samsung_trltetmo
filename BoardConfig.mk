@@ -21,8 +21,18 @@ TARGET_OTA_ASSERT_DEVICE := trltetmo,trltecan
 TARGET_KERNEL_VARIANT_CONFIG := apq8084_sec_trlte_tmo_defconfig
 
 # Init
-TARGET_INIT_VENDOR_LIB := libinit_trltetmo
-TARGET_UNIFIED_DEVICE := true
+TARGET_INIT_VENDOR_LIB := libinit_apq8084
+TARGET_LIBINIT_APQ8084_DEFINES_FILE := device/samsung/trltetmo/init/init_trlte.cpp
+
+# Partitions
+BOARD_FLASH_BLOCK_SIZE := 262144
+BOARD_BOOTIMAGE_PARTITION_SIZE := 17825792
+BOARD_RECOVERYIMAGE_PARTITION_SIZE := 19932160
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 3774873600
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 27040657408
+
+# Radio/RIL
+include $(COMMON_PATH)/radio/single/board.mk
 
 # inherit from the proprietary version
 -include vendor/samsung/trltetmo/BoardConfigVendor.mk
